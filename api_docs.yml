@@ -1,0 +1,196 @@
+openapi: 3.0.2
+info:
+  title: Wanted Assignment
+  version: 0.0.1
+
+
+paths:
+  /health/:
+    get:
+      tags:
+        - commont
+      summary: 상태확인
+      responses:
+        '200':
+          description: Successful Response
+
+  /searches/companies/name/:
+    get:
+      tags:
+        - search
+      summary: 회사 이름 검색
+      description: |
+        이름으로 회사 정보를 검색한다.
+        다국어 검색 시 현재 서비스 국가의 이름으로 노출된다.
+        타 국가에 서비스되고 있는 회사명이 존재하더라도 서비스
+        국가 언어의 회사명이 없다면 노출하지 않는다.
+      parameters:
+        - required: true
+          schema:
+            title: name
+            type: string
+            description: |
+              검색을 수행할 회사이름 문자열이며,
+              회사 이름의 일부만을 포함해도 된다.
+          name: name
+          in: query
+        - required: false
+          schema:
+            title: autocomplete
+            type: boolean
+            description: |
+              자동완성 요청 파라메터로, 파라메터 설정 시 회사 전체 정보가 아닌
+              자동완성을 위해 필요한 최소한의 정보만을 반환하다.
+              현재는 정의된 회사 정보 자체가 제한적(id, name)이기 때문에 따로
+              구현되어 있지는 않다.
+          name: autocomplete
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyInfoList'
+        '400':
+          description: Bad Request
+        '500':
+          description: Server Error
+
+  /searches/companies/tag/:
+    get:
+      tags:
+        - search
+      summary: 회사 태그 검색
+      description: |
+        특정 태그를 포함하고 있는 회사정보를 검색한다.
+        클라이언는 태그 이름 언어와 상관없이 고유 태그 ID를 전송한다.
+        이는 클라이언트가 이미 환경에 따라 언어별 태그 이름과 태그 ID를
+        함께 캐시하여 가지고 있다는 가정이다.
+        따라서 서버는 유저가 어떤 언어를 이용하여 태그를 선택하였는지 알필요가
+        없다.
+      parameters:
+        - required: true
+          schema:
+            title: tag_id 리스트
+            type: string
+            description: |
+              검색할 tag_id 리스트로, 콤마(,) 를 사용하여 최대 3개의
+              tag_id를 포함할 수 있다. 3개 이상의 태그 정보가 전달된 경우
+              앞에 3개를 태그 정보만을 사용한다.
+          name: tags
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyInfoList'
+        '400':
+          description: Bad Request
+        '500':
+          description: Server Error
+
+  /companies/{company_id}/tags/:
+    post:
+      tags:
+        - company
+      summary: 회사 태그 추가
+      description: |
+        회사가 포함할 태그정보를 추가한다. 하나 이상의 태그 전송 시
+        하나라도 중복된 태그가 존재한다며 모든 태그가 추가되지 않고
+        에러를 반환한다.
+      parameters:
+        - required: true
+          schema:
+            title: company_id
+            type: string
+          name: company_id
+          in: path
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagInfoList'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+        '400':
+          description: Bad Request
+        '403':
+          description: Bad Request (중복 태그 생성 요청)
+        '500':
+          description: Server Error
+    delete:
+      tags:
+        - company
+      summary: 회사 태그 삭제
+      description: |
+        회사가 포함한 태그정보를 삭제한다.
+        존재하지 않는 태그 삭제를 요청하여도 성공 응답을 한다.
+      parameters:
+        - required: true
+          schema:
+            title: company_id
+            type: string
+            description: |
+              삭제할 tag_id 리스트로, 콤마(,) 를 사용하여 하나 이상의
+              tag_id를 포함할 수 있다.
+          name: company_id
+          in: path
+        - required: true
+          schema:
+            title: tag_ids
+            type: string
+          name: tag_ids
+          in: query
+      responses:
+        '200':
+          description: Successful Response
+        '400':
+          description: Bad Request
+        '500':
+          description: Server Error
+
+
+components:
+  schemas:
+    CompanyInfo:
+      title: CompanyInfo
+      required:
+        - id
+        - name
+      type: object
+      example:
+        id: 1
+        name: Wantedlab
+    CompanyInfoList:
+      title: CompanyInfoList
+      required:
+        - companies
+      type: object
+      properties:
+        companies:
+          title: array
+          items:
+            $ref: '#/components/schemas/CompanyInfo'
+
+    TagInfo:
+      title: TagInfo
+      required:
+        - id
+      type: object
+      example:
+        id: 1
+    TagInfoList:
+      title: TagInfoList
+      required:
+        - tags
+      type: object
+      properties:
+        tags:
+          title: array
+          items:
+            $ref: '#/components/schemas/TagInfo'

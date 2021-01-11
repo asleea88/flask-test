@@ -1,0 +1,16 @@
+version: '3.7'
+
+networks:
+  wanted_api_network:
+    driver: bridge
+
+
+services:
+  api:
+    build: ./
+    ports:
+      - published: 5000
+        target: 5000
+        protocol: tcp
+    networks:
+      wanted_api_network:
