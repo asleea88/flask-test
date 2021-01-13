@@ -7,6 +7,7 @@ $ docker-compose up
 
 ### Test
 ```
+$ pip3 install -r requirements.txt
 $ pip3 install -r requirements-test.txt
 $ cd ./wanted
 $ pytest -v
